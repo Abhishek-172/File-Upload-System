@@ -1,0 +1,118 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: File Upload System with S3 and Notifications
+
+Parameters:
+  Environment:
+    Type: String
+    Default: "production"
+    AllowedValues:
+      - "development"
+      - "staging"
+      - "production"
+
+Resources:
+  # DynamoDB Table
+  MetadataTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${AWS::StackName}-metadata"
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+
+  # S3 Bucket
+  FileUploadBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "file-upload-system-${AWS::AccountId}-${AWS::Region}"
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders: ['*']
+            AllowedMethods: ['PUT', 'POST', 'GET']
+            AllowedOrigins: ['*']
+            ExposedHeaders: ['ETag']
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+
+  # SNS Topic
+  NotificationTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub "${AWS::StackName}-notifications"
+
+  # SNS Subscription
+  EmailSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: email
+      Endpoint: abhishek.pandey172@gmail.com
+      TopicArn: !Ref NotificationTopic
+
+  # Lambda Functions
+  AuthenticateFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./dist/handlers/authenticate
+      Handler: authenticate.handler
+      Runtime: nodejs16.x
+      Timeout: 30
+      MemorySize: 256
+      Environment:
+        Variables:
+          METADATA_TABLE: !Ref MetadataTable
+          BUCKET_NAME: !Ref FileUploadBucket
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MetadataTable
+        - S3CrudPolicy:
+            BucketName: !Ref FileUploadBucket
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /authenticate
+            Method: POST
+
+  NotificationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./dist/handlers/notification
+      Handler: notification.handler
+      Runtime: nodejs16.x
+      Timeout: 30
+      MemorySize: 256
+      Environment:
+        Variables:
+          NOTIFICATION_TOPIC_ARN: !Ref NotificationTopic
+          METADATA_TABLE: !Ref MetadataTable
+      Policies:
+        - SNSPublishMessagePolicy:
+            TopicName: !GetAtt NotificationTopic.TopicName
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MetadataTable
+      Events:
+        S3Event:
+          Type: S3
+          Properties:
+            Bucket: !Ref FileUploadBucket
+            Events: s3:ObjectCreated:*
+
+Outputs:
+  ApiEndpoint:
+    Description: "API Gateway endpoint URL"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/authenticate"
+  
+  BucketName:
+    Description: "S3 Bucket Name"
+    Value: !Ref FileUploadBucket
+  
+  NotificationTopicArn:
+    Description: "SNS Topic ARN"
+    Value: !Ref NotificationTopic

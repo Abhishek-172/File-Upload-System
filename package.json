@@ -1,0 +1,21 @@
+{
+  "name": "file-upload-system",
+  "version": "1.0.0",
+  "description": "AWS File Upload System with Notifications",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc && ts-node copyFile.ts",
+    "test": "ts-node src/tests/test.ts",
+    "deploy": "npm run build && sam build && sam deploy"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.1040.0",
+    "axios": "^0.24.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.92",
+    "@types/node": "^16.11.12",
+    "typescript": "^4.5.4",
+    "ts-node": "^10.4.0"
+  }
+}

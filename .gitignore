@@ -1,0 +1,10 @@
+# Dependencies
+node_modules/
+dist/
+
+# AWS SAM
+.aws-sam/
+samconfig.toml
+
+# Package files
+package-lock.json

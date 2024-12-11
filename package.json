@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc && ts-node copyFile.ts",
     "test": "ts-node src/tests/test.ts",
-    "deploy": "npm run build && sam build && sam deploy"
+    "deploy": "sam build -t base-infrastructure.yml && sam deploy --guided --template-file base-infrastructure.yml --stack-name File-Upload-System-Base && sam build -t functions.yml && sam deploy --guided --template-file functions.yml --stack-name File-Upload-System-Functions"
   },
   "dependencies": {
     "aws-sdk": "^2.1040.0",

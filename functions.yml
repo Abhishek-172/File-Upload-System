@@ -1,0 +1,64 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Lambda Functions for File Upload System
+
+Resources:
+  ApiGateway:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      Cors:
+        AllowMethods: "'POST,OPTIONS'"
+        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'"
+        AllowOrigin: "'*'"
+
+  AuthenticateFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./dist/handlers/authenticate
+      Handler: authenticate.handler
+      Runtime: nodejs16.x
+      Timeout: 30
+      MemorySize: 256
+      Environment:
+        Variables:
+          METADATA_TABLE: !ImportValue 'File-Upload-System-Base-table-name'
+          BUCKET_NAME: !ImportValue 'File-Upload-System-Base-bucket-name'
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !ImportValue 'File-Upload-System-Base-table-name'
+        - S3CrudPolicy:
+            BucketName: !ImportValue 'File-Upload-System-Base-bucket-name'
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /authenticate
+            Method: POST
+            RestApiId: !Ref ApiGateway
+
+  NotificationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./dist/handlers/notification
+      Handler: notification.handler
+      Runtime: nodejs16.x
+      Timeout: 30
+      MemorySize: 256
+      Environment:
+        Variables:
+          NOTIFICATION_TOPIC_ARN: !ImportValue 'File-Upload-System-Base-topic-arn'
+          METADATA_TABLE: !ImportValue 'File-Upload-System-Base-table-name'
+          BUCKET_NAME: !ImportValue 'File-Upload-System-Base-bucket-name'
+      Policies:
+        - SNSPublishMessagePolicy:
+            TopicName: !Select [5, !Split [":", !ImportValue 'File-Upload-System-Base-topic-arn']]
+        - DynamoDBCrudPolicy:
+            TableName: !ImportValue 'File-Upload-System-Base-table-name'
+        - S3ReadPolicy:
+            BucketName: !ImportValue 'File-Upload-System-Base-bucket-name'
+
+Outputs:
+  ApiEndpoint:
+    Description: "API Gateway endpoint URL"
+    Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/Prod/authenticate"

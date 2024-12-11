@@ -1,0 +1,83 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Base Infrastructure for File Upload System
+
+Parameters:
+  Environment:
+    Type: String
+    Default: "production"
+    AllowedValues:
+      - "development"
+      - "staging"
+      - "production"
+
+Resources:
+  MetadataTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${AWS::StackName}-metadata"
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+
+  FileUploadBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "file-upload-system-${AWS::AccountId}-${AWS::Region}"
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders: ['*']
+            AllowedMethods: ['PUT', 'POST', 'GET']
+            AllowedOrigins: ['*']
+            ExposedHeaders: ['ETag']
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+
+  NotificationTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub "${AWS::StackName}-notifications"
+
+  EmailSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: email
+      Endpoint: abhishek.pandey172@gmail.com
+      TopicArn: !Ref NotificationTopic
+
+Outputs:
+  BucketName:
+    Description: "S3 Bucket Name"
+    Value: !Ref FileUploadBucket
+    Export:
+      Name: !Sub "${AWS::StackName}-bucket-name"
+
+  BucketArn:
+    Description: "S3 Bucket ARN"
+    Value: !GetAtt FileUploadBucket.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-bucket-arn"
+
+  TableName:
+    Description: "DynamoDB Table Name"
+    Value: !Ref MetadataTable
+    Export:
+      Name: !Sub "${AWS::StackName}-table-name"
+
+  TableArn:
+    Description: "DynamoDB Table ARN"
+    Value: !GetAtt MetadataTable.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-table-arn"
+
+  TopicArn:
+    Description: "SNS Topic ARN"
+    Value: !Ref NotificationTopic
+    Export:
+      Name: !Sub "${AWS::StackName}-topic-arn"

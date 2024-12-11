@@ -16,7 +16,7 @@ async function testFileUpload(): Promise<void> {
         // 1. Get pre-signed URL
         console.log('Requesting pre-signed URL...');
         const response = await axios.post(
-            'https://ir5cvn9gx5.execute-api.us-east-1.amazonaws.com/Prod/authenticate',
+            'https://dqdux45du5.execute-api.us-east-1.amazonaws.com/Prod/authenticate',
             testFile
         );
 

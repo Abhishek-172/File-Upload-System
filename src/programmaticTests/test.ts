@@ -9,14 +9,14 @@ async function testFileUpload(): Promise<void> {
         const testFile: FileUploadRequest = {
             fileName: 'test.txt',
             contentType: 'text/plain',
-            source: 'automobiles',     // Added required field
-            roleName: 'test-role'      // Added required field
+            source: 'automobiles',
+            roleName: 'test-role'
         };
 
         // 1. Get pre-signed URL
         console.log('Requesting pre-signed URL...');
         const response = await axios.post(
-            'https://dqdux45du5.execute-api.us-east-1.amazonaws.com/Prod/authenticate',
+            'https://dqdux45du5.execute-api.us-east-1.amazonaws.com/Prod/authenticate', //Please Update the URL from API Gateways with /authenticate endpoint
             testFile
         );
 

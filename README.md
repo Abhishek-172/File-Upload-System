@@ -10,7 +10,6 @@ The system consists of several AWS components working together:
 
    - Handles authentication requests for file uploads
    - Returns pre-signed URLs for secure S3 uploads
-   - Resource ID: ccozoxeph
 
 2. **Lambda Functions**
 
